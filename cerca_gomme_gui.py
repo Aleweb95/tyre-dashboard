@@ -1,14 +1,19 @@
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, ttk
 import webbrowser
 import time
+import json
+import os
 
 class TyreDashboardApp:
     def __init__(self, root):
         self.root = root
         self.root.title("Tyre Dashboard - Comparatore B2B")
-        self.root.geometry("450x350")
+        self.root.geometry("450x450") # Aumentata l'altezza per far spazio allo storico
         self.root.resizable(False, False)
+        
+        self.file_storico = "storico_ricerche.json"
+        self.ricerche_recenti = self.carica_storico()
         
         # Configurazione stile base
         self.font_title = ("Helvetica", 16, "bold")
@@ -46,11 +51,21 @@ class TyreDashboardApp:
         self.entry_serie.insert(0, "50")
         self.entry_cerchio.insert(0, "15")
 
+        # Frame per lo storico
+        frame_storico = tk.Frame(self.root)
+        frame_storico.pack(pady=15)
+        
+        tk.Label(frame_storico, text="Ultime Ricerche:", font=self.font_label).pack(side=tk.LEFT, padx=5)
+        
+        self.combo_storico = ttk.Combobox(frame_storico, values=self.ricerche_recenti, width=15, font=self.font_label, state="readonly")
+        self.combo_storico.pack(side=tk.LEFT, padx=5)
+        self.combo_storico.bind("<<ComboboxSelected>>", self.carica_da_storico)
+
         # Bottone di ricerca
         btn_cerca = tk.Button(self.root, text="🔍 AVVIA RICERCA", font=("Helvetica", 14, "bold"), 
                               bg="#4CAF50", fg="white", activebackground="#45a049", 
                               command=self.avvia_ricerca, pady=10, width=20)
-        btn_cerca.pack(pady=30)
+        btn_cerca.pack(pady=20)
         
         # Status Label
         self.lbl_status = tk.Label(self.root, text="Pronto.", font=("Helvetica", 10, "italic"), fg="gray")
@@ -58,6 +73,46 @@ class TyreDashboardApp:
 
         # Binding del tasto Invio
         self.root.bind('<Return>', lambda event: self.avvia_ricerca())
+
+    def carica_storico(self):
+        """Carica lo storico dal file JSON se esiste."""
+        if os.path.exists(self.file_storico):
+            try:
+                with open(self.file_storico, 'r') as file:
+                    return json.load(file)
+            except:
+                return []
+        return []
+
+    def salva_storico(self, misura_str):
+        """Salva la nuova ricerca nello storico (max 10 elementi)."""
+        if misura_str in self.ricerche_recenti:
+            self.ricerche_recenti.remove(misura_str) # Sposta in cima se già esiste
+        self.ricerche_recenti.insert(0, misura_str)
+        
+        if len(self.ricerche_recenti) > 10:
+            self.ricerche_recenti = self.ricerche_recenti[:10]
+            
+        try:
+            with open(self.file_storico, 'w') as file:
+                json.dump(self.ricerche_recenti, file)
+            # Aggiorna la combobox
+            self.combo_storico['values'] = self.ricerche_recenti
+        except Exception as e:
+            print(f"Errore nel salvataggio dello storico: {e}")
+
+    def carica_da_storico(self, event=None):
+        """Popola i campi di input quando si seleziona una voce dallo storico."""
+        selezione = self.combo_storico.get()
+        if selezione:
+            parti = selezione.split()
+            if len(parti) == 3:
+                self.entry_larghezza.delete(0, tk.END)
+                self.entry_larghezza.insert(0, parti[0])
+                self.entry_serie.delete(0, tk.END)
+                self.entry_serie.insert(0, parti[1])
+                self.entry_cerchio.delete(0, tk.END)
+                self.entry_cerchio.insert(0, parti[2])
 
     def valida_input(self, l, s, r):
         if not all([l, s, r]):
@@ -90,6 +145,10 @@ class TyreDashboardApp:
                 webbrowser.open_new_tab(url)
                 time.sleep(0.3) # Piccola pausa per stabilità browser
                 
+            # Salva la ricerca nello storico
+            misura_completa = f"{l} {s} {r}"
+            self.salva_storico(misura_completa)
+            
             self.lbl_status.config(text="Ricerca completata. Controlla il browser.", fg="green")
 
 if __name__ == "__main__":
