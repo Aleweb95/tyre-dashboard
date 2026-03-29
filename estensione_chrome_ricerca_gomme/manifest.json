@@ -1,0 +1,27 @@
+{
+  "manifest_version": 3,
+  "name": "Auto-Ricerca Multi-Sito B2B",
+  "version": "1.0",
+  "description": "Quando cerchi una misura sul tuo sito, apre in automatico i risultati su Alzura, Univergomma ed Esapneus.",
+  "permissions": [
+    "tabs",
+    "activeTab",
+    "scripting"
+  ],
+  "host_permissions": [
+    "*://*/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://iltuosito.it/*",
+        "*://www.iltuosito.it/*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}
