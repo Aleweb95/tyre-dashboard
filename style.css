@@ -398,3 +398,70 @@ body {
      position: absolute; top: 0; left: 0; width: 100% !important; border: none !important; box-shadow: none !important; padding: 0 !important;
   }
 }
+
+/* ============================================
+   MOBILE RESPONSIVENESS (SMARTPHONE)
+   ============================================ */
+@media (max-width: 768px) {
+  .app-container { padding: 10px; }
+  
+  .header { 
+    flex-direction: column; 
+    text-align: center; 
+    gap: 15px;
+  }
+  
+  .search-hero { padding: 40px 15px; }
+  .search-hero h2 { font-size: 1.8rem; }
+  
+  .search-bar-wrapper {
+    flex-direction: column;
+    padding: 15px;
+    border-radius: var(--radius-md);
+  }
+  
+  .search-field {
+    border-right: none;
+    border-bottom: 1px solid var(--border-glass);
+    padding: 10px 0;
+    width: 100%;
+  }
+  
+  .search-field:last-child { border-bottom: none; }
+  .search-field input { font-size: 1.1rem; }
+  
+  .tabs {
+    overflow-x: auto;
+    padding-bottom: 5px;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .tab {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+  
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  
+  .stat-card { padding: 15px; }
+  .stat-value { font-size: 1.4rem; }
+  
+  .comparatore-grid { gap: 15px; }
+  
+  .modal {
+    padding: 20px;
+    width: 95%;
+    margin: 10px;
+  }
+  
+  .btn {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .header .btn { width: auto; }
+}
