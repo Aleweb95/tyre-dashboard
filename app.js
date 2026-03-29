@@ -127,20 +127,30 @@ function lanciaWorkspace() {
     const l = document.getElementById('search-larghezza').value;
     const s = document.getElementById('search-serie').value;
     const c = document.getElementById('search-cerchio').value;
+    const marca = document.getElementById('search-marca').value;
+    const modello = document.getElementById('search-modello').value;
 
     if (!l || !s || !c) {
-        showToast("⚠️ Inserisci Misura completa!", "warning");
+        showToast("⚠️ Inserisci almeno la Misura completa!", "warning");
         return;
     }
 
-    // 1. Esapneus
-    window.open(`https://b2b.esapneus.it/it/Pneumatici/Ricerca?Larghezza=${l}&Serie=${s}&Diametro=${c}`, '_blank');
-    // 2. Univergomma
-    window.open(`https://www.univergomma.it/ricerca?l=${l}&s=${s}&d=${c}`, '_blank');
-    // 3. Alzura
-    window.open(`https://tyre24.alzura.com/it/it/pneumatici/ricerca?width=${l}&series=${s}&diameter=${c}`, '_blank');
+    const screenW = window.screen.availWidth;
+    const screenH = window.screen.availHeight;
+    const winW = Math.floor(screenW / 3);
+    const winH = screenH;
+
+    // URL costruzione
+    const urlEsa = `https://b2b.esapneus.it/it/Pneumatici/Ricerca?Larghezza=${l}&Serie=${s}&Diametro=${c}&Marca=${marca}&Modello=${modello}`;
+    const urlUni = `https://www.univergomma.it/ricerca?l=${l}&s=${s}&d=${c}&branding=${marca}&pattern=${modello}`;
+    const urlAlz = `https://tyre24.alzura.com/it/it/pneumatici/ricerca?width=${l}&series=${s}&diameter=${c}&manufacturer=${marca}&pattern=${modello}`;
+
+    // Apertura 3 finestre affiancate
+    window.open(urlEsa, 'EsaWindow', `width=${winW},height=${winH},left=0,top=0,resizable=yes,scrollbars=yes`);
+    window.open(urlUni, 'UniWindow', `width=${winW},height=${winH},left=${winW},top=0,resizable=yes,scrollbars=yes`);
+    window.open(urlAlz, 'AlzWindow', `width=${winW},height=${winH},left=${winW * 2},top=0,resizable=yes,scrollbars=yes`);
     
-    showToast("🚀 Lancio Workflow B2B: 3 Portali in caricamento...");
+    showToast("🖥️ Workflow Splitscreen: 3 Finestre affiancate in caricamento...");
 }
 
 // EVENT LISTENERS & CRUD
