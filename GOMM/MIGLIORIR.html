@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Tyre Dashboard — Sistema gestionale per gommisti. Ricerca multi-sito, gestione magazzino e comparazione prezzi.">
+  <title>Tyre Dashboard — Gestionale Gommista</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛞</text></svg>">
+</head>
+<body>
+  <div class="app-container">
+
+    <!-- ===== HEADER ===== -->
+    <header class="header">
+      <div class="header-left">
+        <div class="logo-icon">🛞</div>
+        <h1>Tyre Dashboard <span>v1.0</span></h1>
+      </div>
+      <div class="header-actions">
+        <select id="theme-selector" class="btn btn-secondary btn-sm" title="Cambia Tema">
+          <option value="default">🌙 Default Dark</option>
+          <option value="light">☀️ Light Mode</option>
+          <option value="ocean">🌊 Deep Ocean</option>
+          <option value="forest">🌲 Dark Forest</option>
+          <option value="cyberpunk">🤖 Cyberpunk</option>
+        </select>
+        <button class="btn btn-secondary btn-sm" id="btn-export" title="Esporta magazzino">📤 Esporta</button>
+        <button class="btn btn-secondary btn-sm" id="btn-import" title="Importa magazzino">📥 Importa</button>
+        <button class="btn btn-secondary btn-sm" id="btn-reset-demo" title="Ripristina dati demo">🔄 Demo</button>
+        <input type="file" id="import-file" accept=".json" style="display:none">
+      </div>
+    </header>
+
+    <!-- ===== RICERCA HERO ===== -->
+    <section class="search-hero">
+      <h2>Cerca Gomme su <span class="highlight">Tutti i Fornitori</span></h2>
+      <p>Inserisci la misura e apri Alzura, Univergomma ed Esapneus in un click</p>
+
+      <div class="search-bar-wrapper">
+        <div class="search-input-group">
+          <div class="search-field">
+            <span class="field-label">Larghezza</span>
+            <input type="text" id="search-larghezza" placeholder="205" maxlength="3" inputmode="numeric">
+          </div>
+          <div class="search-field">
+            <span class="field-label">Serie</span>
+            <input type="text" id="search-serie" placeholder="55" maxlength="2" inputmode="numeric">
+          </div>
+          <div class="search-field">
+            <span class="field-label">Cerchio</span>
+            <input type="text" id="search-cerchio" placeholder="16" maxlength="2" inputmode="numeric">
+          </div>
+        </div>
+        <div class="search-actions">
+          <button class="btn btn-primary" id="btn-cerca-tutti" title="Compara magazzino locale e Fornitori">
+            🚀 Cerca in Locale
+          </button>
+          <button class="btn btn-success" id="btn-workspace" title="Apre Alzura, Univergomma ed Esapneus affiancati (pop-up)">
+            🖥️ Workflow B2B
+          </button>
+        </div>
+      </div>
+
+      <!-- Risultato magazzino -->
+      <div id="stock-result"></div>
+
+      <!-- Bottoni per aprire i siti singolarmente -->
+      <div class="site-buttons" id="site-buttons"></div>
+    </section>
+
+    <!-- ===== STATS ===== -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">📦</div>
+        <div class="stat-value" id="stat-pezzi">0</div>
+        <div class="stat-label">Pezzi Totali</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">💰</div>
+        <div class="stat-value" id="stat-valore">€0</div>
+        <div class="stat-label">Valore Magazzino</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">🏷️</div>
+        <div class="stat-value" id="stat-marche">0</div>
+        <div class="stat-label">Marche</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">📐</div>
+        <div class="stat-value" id="stat-misure">0</div>
+        <div class="stat-label">Misure Diverse</div>
+      </div>
+    </div>
+
+    <!-- ===== TABS ===== -->
+    <div class="tabs">
+      <button class="tab" data-tab="magazzino">📦 Magazzino</button>
+      <button class="tab" data-tab="comparatore">⚖️ Comparatore B2B</button>
+      <button class="tab" data-tab="fornitori">🏭 Portali B2B</button>
+    </div>
+
+    <!-- ===== TAB: MAGAZZINO ===== -->
+    <div class="tab-content active" id="tab-magazzino">
+      <div class="glass-card">
+        <div class="table-header filters-container">
+          <div style="display:flex; align-items:center; gap:12px;">
+             <h3 style="margin:0;">📦 Inventario Locale</h3>
+             <button class="btn btn-success btn-sm" id="btn-aggiungi">➕ Aggiungi</button>
+          </div>
+          <div class="filters-bar" style="margin-top:15px; display:flex; flex-wrap:wrap; gap:10px;">
+            <input type="text" id="filter-misura" class="form-group" style="flex:1; min-width:200px;" placeholder="🔍 Ricerca testo o misura..." oninput="applyFilters()">
+            
+            <select id="filter-stagione" class="form-group" style="width:180px;" onchange="applyFilters()">
+              <option value="">Stagione: Tutte</option>
+              <option value="Estiva">Estive ☀️</option>
+              <option value="Invernale">Invernali ❄️</option>
+              <option value="4 Stagioni">4 Stagioni 🌤️</option>
+            </select>
+            
+            <input type="number" id="filter-prezzo-max" class="form-group" style="width:140px;" placeholder="Max €" oninput="applyFilters()">
+          </div>
+        </div>
+
+        <div class="section-title-new">
+          ✨ PNEUMATICI NUOVI
+        </div>
+        <div class="table-wrapper">
+          <table class="dashboard-table">
+            <thead>
+              <tr>
+                <th>Misura</th>
+                <th>Marca/Modello</th>
+                <th>Stagione</th>
+                <th>Quantità</th>
+                <th>Acquisto</th>
+                <th>Scaffale</th>
+                <th>IQT</th>
+                <th>Azioni</th>
+              </tr>
+            </thead>
+            <tbody id="magazzino-nuove-body"></tbody>
+          </table>
+        </div>
+
+        <div class="section-title-used">
+          ♻️ PNEUMATICI USATI
+        </div>
+        <div class="table-wrapper">
+          <table class="dashboard-table">
+            <thead>
+              <tr>
+                <th>Misura</th>
+                <th>Marca/Modello</th>
+                <th>Stagione</th>
+                <th>Quantità</th>
+                <th>Acquisto</th>
+                <th>Scaffale</th>
+                <th>IQT</th>
+                <th>Azioni</th>
+              </tr>
+            </thead>
+            <tbody id="magazzino-usate-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: COMPARATORE B2B ===== -->
+    <div class="tab-content" id="tab-comparatore">
+      <div class="comparatore-grid">
+        <!-- Inserimento Prezzi -->
+        <div class="glass-card">
+          <h3 style="margin-bottom:20px;">⚖️ Analisi Fornitori B2B</h3>
+          <div class="form-group">
+             <label>Gomma / Misura in Analisi</label>
+             <input type="text" id="comp-gomma" placeholder="es. 205/55 R16 Michelin Primacy" oninput="document.getElementById('print-gomma').textContent = this.value">
+          </div>
+          
+          <div class="comp-box" style="margin-top:20px;">
+             <div class="form-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:15px;">
+               <div class="form-group">
+                 <label>Prezzo Alzura / Tyre24 (€)</label>
+                 <input type="number" id="comp-alzura" class="price-input" placeholder="0.00" step="0.01" oninput="calcolaPreventivo()">
+               </div>
+               <div class="form-group">
+                 <label>Prezzo Univergomma (€)</label>
+                 <input type="number" id="comp-univer" class="price-input" placeholder="0.00" step="0.01" oninput="calcolaPreventivo()">
+               </div>
+               <div class="form-group">
+                 <label>Prezzo Esapneus (€)</label>
+                 <input type="number" id="comp-esa" class="price-input" placeholder="0.00" step="0.01" oninput="calcolaPreventivo()">
+               </div>
+               <div class="form-group">
+                 <label>Margine Vendita (%)</label>
+                 <input type="number" id="comp-margine" value="30" title="Percentuale di ricarico sul prezzo di acquisto" oninput="calcolaPreventivo()">
+               </div>
+               <div class="form-group">
+                 <label>Montaggio x4 (€)</label>
+                 <input type="number" id="comp-montaggio" value="40" title="Costo montaggio per 4 gomme" oninput="calcolaPreventivo()">
+               </div>
+               <div class="form-group">
+                 <label>Gestione PFU x4 (€)</label>
+                 <input type="number" id="comp-pfu" value="10" title="Costo smaltimento PFU per 4 gomme" oninput="calcolaPreventivo()">
+               </div>
+             </div>
+          </div>
+          
+          <div id="b2b-winner" class="winner-badge" style="display:none; margin-top:20px; padding:15px; border-radius:10px; text-align:center;">
+             <!-- Winner info here -->
+          </div>
+        </div>
+
+        <!-- Anteprima Preventivo -->
+        <div class="glass-card quote-card" id="printable-quote">
+           <div class="quote-header">
+              <div>
+                 <h2 class="quote-title">PREVENTIVO</h2>
+                 <p id="print-date" class="quote-date"></p>
+              </div>
+              <div class="quote-vendor">
+                 <h4>Vostro Gommista di Fiducia</h4>
+                 <p>Assistenza Rapida & Qualità</p>
+              </div>
+           </div>
+
+           <div class="quote-item-details">
+              <p class="quote-label">Articolo / Misura</p>
+              <h3 id="print-gomma">---</h3>
+           </div>
+
+           <table class="quote-table">
+              <tr class="quote-row">
+                 <td class="quote-cell">Pneumatici (N. 4 pezzi)</td>
+                 <td class="quote-cell-price" id="print-tot-gomme">€ 0.00</td>
+              </tr>
+              <tr class="quote-row">
+                 <td class="quote-cell">Montaggio, Equilibratura, Valvole</td>
+                 <td class="quote-cell-price" id="print-tot-montaggio">€ 0.00</td>
+              </tr>
+              <tr class="quote-row">
+                 <td class="quote-cell">Contributo Ambientale PFU</td>
+                 <td class="quote-cell-price" id="print-tot-pfu">€ 0.00</td>
+              </tr>
+              <tr class="quote-total-row">
+                 <td class="quote-total-label">TOTALE FINITO</td>
+                 <td class="quote-total-price" id="print-gran-totale">€ 0.00</td>
+              </tr>
+           </table>
+
+           <div class="quote-footer">
+              <p class="quote-notes">
+                 * Prezzo unitario gomma: <span id="print-unitario">€ 0.00</span>. Offerta valida per 7 giorni o fino a esaurimento scorte.
+              </p>
+              <button class="btn btn-primary no-print" onclick="stampaPreventivo()" title="Apri finestra di stampa">🖨️ Stampa per Cliente</button>
+           </div>
+           
+           <!-- Riservato: Margine Netto -->
+           <div class="no-print margin-info-box">
+              <span class="margin-label">💰 Margine Netto stimato:</span>
+              <span class="margin-value" id="print-margine-netto">€ 0.00</span>
+           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: FORNITORI B2B ===== -->
+    <div class="tab-content" id="tab-fornitori">
+      <div class="glass-card">
+        <h3>🏭 Portali Fornitori Rapidi</h3>
+        <p style="margin-bottom:20px; color:var(--text-secondary);">Accesso diretto alle piattaforme B2B configurate.</p>
+        <div class="site-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr)); gap:20px;">
+           <a href="https://tyre24.alzura.com/" target="_blank" class="glass-card" style="text-decoration:none; text-align:center; padding:40px 20px;">
+              <div style="font-size:2rem; margin-bottom:10px;">📦</div>
+              <h4 style="color:var(--text-primary);">Alzura / Tyre24</h4>
+              <p style="font-size:0.8rem; color:var(--text-muted); margin-top:10px;">Network Europeo Leader</p>
+           </a>
+           <a href="https://www.univergomma.it/" target="_blank" class="glass-card" style="text-decoration:none; text-align:center; padding:40px 20px;">
+              <div style="font-size:2rem; margin-bottom:10px;">🏢</div>
+              <h4 style="color:var(--text-primary);">Univergomma</h4>
+              <p style="font-size:0.8rem; color:var(--text-muted); margin-top:10px;">Specialista Italiano B2B</p>
+           </a>
+           <a href="https://b2b.esapneus.it/" target="_blank" class="glass-card" style="text-decoration:none; text-align:center; padding:40px 20px;">
+              <div style="font-size:2rem; margin-bottom:10px;">🚀</div>
+              <h4 style="color:var(--text-primary);">Esapneus</h4>
+              <p style="font-size:0.8rem; color:var(--text-muted); margin-top:10px;">Logistica e Distribuzione</p>
+           </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== TAB: IQT CALCULATOR ===== -->
+    <div class="tab-content" id="tab-iqt">
+      <div class="content-grid">
+        <div class="glass-card">
+          <div class="card-title"><span class="icon">📊</span> Calcolatore IQT (Indice Qualità Tecnica)</div>
+          <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:20px;">
+            Inserisci i dati dell'etichetta europea per calcolare il punteggio qualità della gomma.
+          </p>
+          <div class="iqt-form">
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Aderenza sul Bagnato</label>
+                <select id="iqt-bagnato">
+                  <option value="A">A — Eccellente</option>
+                  <option value="B" selected>B — Buona</option>
+                  <option value="C">C — Sufficiente</option>
+                  <option value="D">D — Scarsa</option>
+                  <option value="E">E — Insufficiente</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Efficienza Energetica</label>
+                <select id="iqt-consumo">
+                  <option value="A">A — Eccellente</option>
+                  <option value="B" selected>B — Buona</option>
+                  <option value="C">C — Sufficiente</option>
+                  <option value="D">D — Scarsa</option>
+                  <option value="E">E — Insufficiente</option>
+                </select>
+              </div>
+              <div class="form-group full-width">
+                <label>Rumorosità (dB)</label>
+                <input type="number" id="iqt-rumore" value="70" min="60" max="80" step="1">
+              </div>
+            </div>
+            <div style="margin-top:16px;">
+              <button class="btn btn-primary" id="btn-calcola-iqt">📊 Calcola Punteggio</button>
+            </div>
+          </div>
+          <div id="iqt-result"></div>
+        </div>
+
+        <div class="glass-card">
+          <div class="card-title"><span class="icon">📖</span> Guida al Punteggio</div>
+          <div style="color:var(--text-secondary);font-size:0.88rem;line-height:1.8;">
+            <p><strong>Come funziona l'IQT:</strong></p>
+            <br>
+            <p>🔵 <strong>Aderenza Bagnato</strong> (max 5pt)</p>
+            <p style="padding-left:20px;">A = 5pt | B = 4pt | C = 3pt | D = 2pt | E = 1pt</p>
+            <br>
+            <p>🟢 <strong>Efficienza Energetica</strong> (max 3pt)</p>
+            <p style="padding-left:20px;">A = 3pt | B = 2pt | C = 1pt | D-E = 0pt</p>
+            <br>
+            <p>🔴 <strong>Rumorosità</strong> (max 3pt)</p>
+            <p style="padding-left:20px;">≤68dB = 3pt | 69-70dB = 2pt | 71-72dB = 1pt | >72dB = 0pt</p>
+            <br>
+            <div style="margin-top:12px;padding:16px;background:var(--bg-glass);border-radius:var(--radius-sm);border:1px solid var(--border-glass);">
+              <p>🏆 <strong>8-10:</strong> Gomma premium</p>
+              <p>👍 <strong>5-7:</strong> Buon rapporto qualità/prezzo</p>
+              <p>⚠️ <strong>3-4:</strong> Valuta alternative</p>
+              <p>❌ <strong>0-2:</strong> Prestazioni insufficienti</p>
+            </div>
+            <br>
+            <p style="color:var(--text-muted);font-size:0.82rem;">
+              💡 <em>Regola: Se una gomma costa il 10% in meno ma ha un IQT inferiore di 3 punti, scartala.</em>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== MODAL: Aggiungi/Modifica Gomma ===== -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <h3 id="modal-title">➕ Aggiungi Gomma</h3>
+      <form id="form-gomma">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Misura *</label>
+            <input type="text" name="misura" placeholder="205/55 R16" required>
+          </div>
+          <div class="form-group">
+            <label>Marca *</label>
+            <input type="text" name="marca" placeholder="Michelin" required>
+          </div>
+          <div class="form-group">
+            <label>Modello</label>
+            <input type="text" name="modello" placeholder="Primacy 4+">
+          </div>
+          <div class="form-group">
+            <label>Quantità</label>
+            <input type="number" name="quantita" placeholder="4" min="0" value="4">
+          </div>
+          <div class="form-group">
+            <label>Prezzo Acquisto (€)</label>
+            <input type="number" name="prezzo" placeholder="65.00" min="0" step="0.01">
+          </div>
+          <div class="form-group">
+            <label>Scaffale</label>
+            <input type="text" name="scaffale" placeholder="A1" maxlength="5">
+          </div>
+          <div class="form-group">
+            <label>Condizione</label>
+            <select name="condizione">
+              <option value="Nuova" selected>Nuova ✨</option>
+              <option value="Usata">Usata ♻️</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Stagionalità</label>
+            <select name="stagione">
+              <option value="Estiva" selected>Estiva ☀️</option>
+              <option value="Invernale">Invernale ❄️</option>
+              <option value="4 Stagioni">4 Stagioni 🌤️</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Aderenza Bagnato</label>
+            <select name="bagnato">
+              <option value="A">A</option>
+              <option value="B" selected>B</option>
+              <option value="C">C</option>
+              <option value="D">D</option>
+              <option value="E">E</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Efficienza Energetica</label>
+            <select name="consumo">
+              <option value="A">A</option>
+              <option value="B" selected>B</option>
+              <option value="C">C</option>
+              <option value="D">D</option>
+              <option value="E">E</option>
+            </select>
+          </div>
+          <div class="form-group full-width">
+            <label>Rumorosità (dB)</label>
+            <input type="number" name="rumore" value="70" min="60" max="80" step="1">
+          </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" id="btn-modal-cancel">Annulla</button>
+          <button type="submit" class="btn btn-primary">💾 Salva</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>🛞 <strong>Tyre Dashboard</strong> v1.0 — Gestionale per Gommisti Professionisti</p>
+    <p style="margin-top:4px;">Ricerca automatica su Alzura · Univergomma · Esapneus</p>
+  </footer>
+
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
